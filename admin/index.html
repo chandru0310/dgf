@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Admin Panel — Chandru Govindaraj</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+/* ═══ TOKENS ═══ */
+:root{
+  --bg:#060611;--bg2:#0c0c1a;--bg3:#101020;
+  --card:#0f0f20;--cardh:#161628;
+  --acc:#b8ff3c;--acc2:#95d420;
+  --txt:#f0f0f8;--muted:#666680;
+  --bdr:rgba(255,255,255,0.06);--bdra:rgba(184,255,60,0.2);
+  --r:14px;--rs:10px;
+  --ease:cubic-bezier(.4,0,.2,1);--T:.28s;
+  --f1:'Plus Jakarta Sans',sans-serif;--f2:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--f1);-webkit-font-smoothing:antialiased;min-height:100vh;}
+a{text-decoration:none;color:inherit;}
+button{font-family:var(--f1);cursor:pointer;}
+::selection{background:var(--acc);color:#000;}
+
+/* ═══ LAYOUT ═══ */
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh;}
+
+/* ═══ SIDEBAR ═══ */
+.sidebar{
+  background:var(--bg2);border-right:1px solid var(--bdr);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  transition:transform var(--T) var(--ease);
+  z-index:200;
+}
+.sb-brand{
+  display:flex;align-items:center;gap:.75rem;
+  padding:1.35rem 1.25rem;border-bottom:1px solid var(--bdr);flex-shrink:0;
+}
+.sb-logo{font-size:1.3rem;font-weight:900;letter-spacing:-1px;}
+.sb-logo span{color:var(--acc);}
+.sb-tag{font-family:var(--f2);font-size:.6rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-left:.25rem;}
+.sb-x{display:none;margin-left:auto;background:none;border:none;color:var(--muted);font-size:1.1rem;}
+.sb-nav{padding:.75rem;flex:1;display:flex;flex-direction:column;gap:.2rem;}
+.sb-item{
+  display:flex;align-items:center;gap:.75rem;width:100%;
+  padding:.82rem 1rem;border-radius:var(--rs);
+  background:none;border:none;color:var(--muted);
+  font-size:.875rem;font-weight:500;text-align:left;
+  transition:background var(--T),color var(--T),border-color var(--T);
+}
+.sb-item:hover{background:var(--card);color:var(--txt);}
+.sb-item.on{background:rgba(184,255,60,0.08);color:var(--acc);border:1px solid var(--bdra);}
+.sb-footer{padding:1rem 1.25rem;border-top:1px solid var(--bdr);display:flex;flex-direction:column;gap:.35rem;flex-shrink:0;}
+.sb-foot-btn{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.58rem .85rem;border-radius:var(--rs);
+  background:none;border:none;color:var(--muted);
+  font-size:.8rem;text-align:left;font-family:var(--f1);
+  transition:background var(--T),color var(--T);text-decoration:none;
+}
+.sb-foot-btn:hover{background:var(--card);color:var(--txt);}
+.sb-foot-btn.red:hover{color:#ff7070;background:rgba(255,70,70,.07);}
+
+/* ═══ MAIN ═══ */
+.main{display:flex;flex-direction:column;min-height:100vh;}
+
+/* ═══ TOPBAR ═══ */
+.topbar{
+  display:flex;align-items:center;gap:1rem;
+  padding:.95rem 2rem;background:var(--bg2);
+  border-bottom:1px solid var(--bdr);
+  position:sticky;top:0;z-index:50;flex-shrink:0;
+}
+.tb-burger{display:none;background:none;border:none;color:var(--txt);font-size:1.3rem;}
+.tb-title{font-size:1rem;font-weight:700;flex:1;}
+.tb-right{display:flex;align-items:center;gap:1rem;}
+.saved-lbl{font-family:var(--f2);font-size:.7rem;color:var(--acc);opacity:0;transition:opacity .3s;}
+.saved-lbl.on{opacity:1;}
+.btn-save{
+  padding:.55rem 1.35rem;background:var(--acc);color:#000;
+  font-size:.82rem;font-weight:800;border:none;border-radius:50px;
+  transition:transform var(--T),box-shadow var(--T);
+}
+.btn-save:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(184,255,60,.22);}
+
+/* ═══ TABS ═══ */
+.tab{display:none;padding:2rem;animation:tabIn .3s var(--ease);}
+.tab.on{display:block;}
+@keyframes tabIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.tab-title{font-size:1.15rem;font-weight:800;margin-bottom:1.5rem;}
+.tab-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;}
+.tab-row .tab-title{margin-bottom:0;}
+
+/* ═══ CARDS ═══ */
+.panel{
+  background:var(--card);border:1px solid var(--bdr);
+  border-radius:var(--r);padding:1.75rem;margin-bottom:1.5rem;
+}
+
+/* ═══ FORMS ═══ */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;}
+.fg{display:flex;flex-direction:column;gap:.42rem;}
+.fg.full{grid-column:1/-1;}
+.fg label{font-family:var(--f2);font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+.fg input,.fg textarea,.fg select{
+  background:var(--bg2);border:1.5px solid var(--bdr);
+  border-radius:var(--rs);padding:.78rem 1rem;
+  color:var(--txt);font-family:var(--f1);font-size:.88rem;
+  outline:none;resize:vertical;
+  transition:border-color var(--T),box-shadow var(--T);
+}
+.fg input:focus,.fg textarea:focus,.fg select:focus{
+  border-color:var(--acc);box-shadow:0 0 0 3px rgba(184,255,60,0.07);
+}
+
+/* ═══ ADD BUTTON ═══ */
+.btn-add{
+  padding:.5rem 1.1rem;background:rgba(184,255,60,0.07);
+  border:1px solid var(--bdra);border-radius:50px;
+  color:var(--acc);font-size:.82rem;font-weight:700;
+  transition:background var(--T),color var(--T);
+}
+.btn-add:hover{background:var(--acc);color:#000;}
+
+/* ═══ ITEM LIST ═══ */
+.ilist{display:flex;flex-direction:column;gap:.85rem;}
+.icard{
+  background:var(--card);border:1px solid var(--bdr);
+  border-radius:var(--r);overflow:hidden;
+  transition:border-color var(--T);
+}
+.icard:hover{border-color:var(--bdra);}
+.icard-head{
+  display:flex;align-items:center;gap:.85rem;
+  padding:1rem 1.25rem;cursor:pointer;user-select:none;
+  transition:background var(--T);
+}
+.icard-head:hover{background:var(--cardh);}
+.ic-emoji{font-size:1.5rem;flex-shrink:0;}
+.ic-label{font-size:.92rem;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ic-meta{font-size:.72rem;color:var(--muted);white-space:nowrap;margin-right:.5rem;}
+.ic-chev{color:var(--muted);font-size:.8rem;transition:transform var(--T);flex-shrink:0;}
+.ic-chev.open{transform:rotate(180deg);}
+.ic-del{
+  padding:.3rem .7rem;background:none;border:1px solid transparent;
+  border-radius:6px;font-size:.72rem;color:var(--muted);flex-shrink:0;
+  transition:border-color var(--T),color var(--T);
+}
+.ic-del:hover{border-color:#ff7070;color:#ff7070;}
+.icard-body{
+  display:none;padding:0 1.25rem 1.25rem;
+  border-top:1px solid var(--bdr);
+}
+.icard-body.open{display:block;}
+.icard-body .fgrid{margin-top:1.15rem;}
+.rng-row{display:flex;align-items:center;gap:.85rem;}
+.rng-row input[type=range]{flex:1;accent-color:var(--acc);}
+.rng-val{font-family:var(--f2);font-size:.8rem;font-weight:700;color:var(--acc);width:38px;text-align:right;}
+
+/* ═══ PASSWORD PANEL ═══ */
+.pw-info{font-size:.82rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.6;}
+
+/* ═══ TOAST ═══ */
+.toast{
+  position:fixed;bottom:2rem;right:2rem;
+  background:var(--acc);color:#000;
+  padding:.8rem 1.5rem;border-radius:50px;
+  font-size:.88rem;font-weight:700;
+  opacity:0;transform:translateY(16px);
+  transition:.3s ease;pointer-events:none;z-index:999;
+}
+.toast.on{opacity:1;transform:translateY(0);}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:768px){
+  .layout{grid-template-columns:1fr;}
+  .sidebar{
+    position:fixed;left:-280px;top:0;bottom:0;width:260px;
+    box-shadow:0 0 40px rgba(0,0,0,.6);
+  }
+  .sidebar.open{left:0;}
+  .sb-x{display:block;}
+  .tb-burger{display:block;}
+  .tab{padding:1.25rem;}
+  .fgrid{grid-template-columns:1fr;}
+  .fg.full{grid-column:1;}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH GUARD - simple, no loop -->
+<script>
+(function(){
+  var ok = sessionStorage.getItem("cg_auth")==="1" || localStorage.getItem("cg_auth_persist")==="1";
+  if(!ok){ window.location.replace("login.html"); }
+})();
+</script>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sb">
+    <div class="sb-brand">
+      <div>
+        <div class="sb-logo">CG<span>.</span><span class="sb-tag">Admin</span></div>
+      </div>
+      <button class="sb-x" id="sbX">✕</button>
+    </div>
+    <nav class="sb-nav">
+      <button class="sb-item on" data-tab="profile">👤&nbsp; Profile</button>
+      <button class="sb-item"    data-tab="skills" >⚡&nbsp; Skills</button>
+      <button class="sb-item"    data-tab="projects">🚀&nbsp; Projects</button>
+      <button class="sb-item"    data-tab="certs"  >📜&nbsp; Certifications</button>
+      <button class="sb-item"    data-tab="passwd" >🔑&nbsp; Change Password</button>
+    </nav>
+    <div class="sb-footer">
+      <a href="../index.html" target="_blank" class="sb-foot-btn">↗&nbsp; View Live Site</a>
+      <button class="sb-foot-btn red" id="logoutBtn">⎋&nbsp; Logout</button>
+      <button class="sb-foot-btn red" id="resetBtn" >↺&nbsp; Reset to Defaults</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <button class="tb-burger" id="tbBurger">☰</button>
+      <div class="tb-title" id="tbTitle">Profile</div>
+      <div class="tb-right">
+        <span class="saved-lbl" id="savedLbl">✓ Saved!</span>
+        <button class="btn-save" onclick="saveAll()">Save Changes</button>
+      </div>
+    </div>
+
+    <!-- ── PROFILE TAB ── -->
+    <div class="tab on" id="tab-profile">
+      <div class="tab-title">Profile Information</div>
+      <div class="panel">
+        <div class="fgrid">
+          <div class="fg"><label>Full Name</label><input id="pName" type="text" placeholder="Chandru Govindaraj"/></div>
+          <div class="fg"><label>Short Title</label><input id="pTitle" type="text" placeholder="ECE Engineer · IoT Builder"/></div>
+          <div class="fg full"><label>Bio / Tagline</label><textarea id="pBio" rows="3" placeholder="Describe yourself..."></textarea></div>
+          <div class="fg"><label>Email</label><input id="pEmail" type="email" placeholder="your@email.com"/></div>
+          <div class="fg"><label>Phone</label><input id="pPhone" type="text" placeholder="+91 93459 88466"/></div>
+          <div class="fg"><label>LinkedIn Username</label><input id="pLinkedin" type="text" placeholder="chandru-govindaraj-843799256"/></div>
+          <div class="fg"><label>Blog URL</label><input id="pBlog" type="url" placeholder="https://..."/></div>
+          <div class="fg"><label>Location</label><input id="pLocation" type="text" placeholder="Dharmapuri, Tamil Nadu"/></div>
+          <div class="fg full"><label>Full Address</label><textarea id="pAddress" rows="2" placeholder="Street, City, State, PIN"></textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SKILLS TAB ── -->
+    <div class="tab" id="tab-skills">
+      <div class="tab-row">
+        <div class="tab-title">Skills</div>
+        <button class="btn-add" onclick="addSkill()">+ Add Skill</button>
+      </div>
+      <div class="ilist" id="skillsList"></div>
+    </div>
+
+    <!-- ── PROJECTS TAB ── -->
+    <div class="tab" id="tab-projects">
+      <div class="tab-row">
+        <div class="tab-title">Projects</div>
+        <button class="btn-add" onclick="addProject()">+ Add Project</button>
+      </div>
+      <div class="ilist" id="projectsList"></div>
+    </div>
+
+    <!-- ── CERTS TAB ── -->
+    <div class="tab" id="tab-certs">
+      <div class="tab-row">
+        <div class="tab-title">Certifications &amp; Events</div>
+        <button class="btn-add" onclick="addCert()">+ Add Certification</button>
+      </div>
+      <div class="ilist" id="certsList"></div>
+    </div>
+
+    <!-- ── PASSWORD TAB ── -->
+    <div class="tab" id="tab-passwd">
+      <div class="tab-title">Change Admin Credentials</div>
+      <div class="panel">
+        <p class="pw-info">Update your admin username and password. After saving, use the new credentials next time you log in.</p>
+        <div class="fgrid">
+          <div class="fg"><label>New Username</label><input id="newU" type="text" placeholder="admin"/></div>
+          <div class="fg"><label>New Password</label><input id="newP" type="password" placeholder="••••••••"/></div>
+          <div class="fg"><label>Confirm Password</label><input id="newP2" type="password" placeholder="••••••••"/></div>
+          <div class="fg" style="justify-content:flex-end;padding-top:1rem;">
+            <button class="btn-save" style="width:fit-content" onclick="changePw()">Update Credentials</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════
+   DATA
+════════════════════════════════════ */
+const DEFAULT = {
+  profile:{
+    name:"Chandru Govindaraj",title:"ECE Engineer · IoT Builder · Innovator",
+    bio:"Final-year ECE student at United Institute of Technology, Coimbatore — building smart embedded systems, IoT solutions & creative tech.",
+    email:"thekingmakerchandru@gmail.com",phone:"9345988466",
+    linkedin:"chandru-govindaraj-843799256",
+    blog:"https://chandrugembeddedprojects.blogspot.com",
+    location:"Dharmapuri, Tamil Nadu",
+    address:"2/181, Gundalapatti (village), Hale Dharmapuri (post), Dharmapuri – 636701"
+  },
+  skills:[
+    {icon:"🐍",name:"Python",level:"Basic",pct:35},
+    {icon:"💻",name:"C Programming",level:"Basic",pct:40},
+    {icon:"🔌",name:"Embedded Systems",level:"Pursuing",pct:58},
+    {icon:"📡",name:"IoT Systems",level:"Intermediate",pct:62},
+    {icon:"🧠",name:"CNN / AI",level:"Exposure",pct:30},
+    {icon:"🎨",name:"Design & Creativity",level:"Passionate",pct:78},
+    {icon:"📣",name:"Communication",level:"Strong",pct:82},
+    {icon:"🚀",name:"Product Thinking",level:"Strong",pct:72},
+    {icon:"⚡",name:"Circuit Design",level:"Intermediate",pct:55},
+    {icon:"📊",name:"Marketing",level:"Interested",pct:60}
+  ],
+  projects:[
+    {emoji:"👶",bg:"linear-gradient(135deg,#0f1a2e,#0a1520)",tag:"Final Year Project · 2026",title:"Smart Baby Incubator",desc:"IoT-powered neonatal incubator with real-time monitoring of temperature, humidity & SpO₂ — designed for rural healthcare settings with remote doctor alerts.",link:"https://chandrugembeddedprojects.blogspot.com/2026/05/smart-baby-incubator-monitoring-and.html",github:""},
+    {emoji:"❤️",bg:"linear-gradient(135deg,#1e0a0a,#180808)",tag:"Mini Project · 2025",title:"Portable IoT ECG Monitor",desc:"Cloud-connected portable ECG that captures heart data, transmits remotely, and enables real-time diagnosis by physicians from anywhere.",link:"https://chandrugembeddedprojects.blogspot.com/2026/03/portable-iot-based-ecg-monitoring.html",github:""},
+    {emoji:"☀️",bg:"linear-gradient(135deg,#1a1500,#120f00)",tag:"Mini Project · 2025",title:"Solar Charger Circuit",desc:"Renewable energy harvesting circuit built from scratch — demonstrating solar charging, efficient charge management and battery protection.",link:"https://chandrugembeddedprojects.blogspot.com/2026/03/solar-charger-with-basic-electronics.html",github:""},
+    {emoji:"🌱",bg:"linear-gradient(135deg,#081a08,#051205)",tag:"Intl. Conference · ICEICST 2025",title:"Smart Irrigation via CNN",desc:"CNN-based smart irrigation that uses computer vision to detect crop health and auto-optimize water usage. Presented at ICEICST 2025.",link:"",github:""}
+  ],
+  certs:[
+    {icon:"📜",name:"NPTEL – Soft Skills & Personality Development",body:"National Programme on Technology Enhanced Learning (IITs)",year:"2023"},
+    {icon:"🤖",name:"NPTEL – Automation in Manufacturing",body:"National Programme on Technology Enhanced Learning (IITs)",year:"2025"},
+    {icon:"🌍",name:"International Conference – ICEICST 2025",body:"Presented: Smart Irrigation System Using CNN",year:"2025"},
+    {icon:"🏭",name:"Twin Booster Panel Assembly Training",body:"Spares Factory Company — Industrial Training",year:"2024"},
+    {icon:"💡",name:"Entrepreneurship Development Program",body:"Student Entrepreneur Workshop",year:"2024"}
+  ]
+};
+
+function loadD(){try{const s=localStorage.getItem("cgpf");return s?JSON.parse(s):JSON.parse(JSON.stringify(DEFAULT));}catch(e){return JSON.parse(JSON.stringify(DEFAULT));}}
+function saveD(d){localStorage.setItem("cgpf",JSON.stringify(d));}
+
+let D = loadD();
+
+/* ════════════════════════════════════
+   UI HELPERS
+════════════════════════════════════ */
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg;t.classList.add("on");
+  setTimeout(()=>t.classList.remove("on"),2500);
+}
+function showSaved(){
+  const s=document.getElementById("savedLbl");
+  s.classList.add("on");setTimeout(()=>s.classList.remove("on"),2000);
+}
+
+/* ════════════════════════════════════
+   TABS
+════════════════════════════════════ */
+const tabNames = {profile:"Profile",skills:"Skills",projects:"Projects",certs:"Certifications",passwd:"Change Password"};
+document.querySelectorAll(".sb-item").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".sb-item").forEach(b=>b.classList.remove("on"));
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("on"));
+    btn.classList.add("on");
+    document.getElementById("tab-"+btn.dataset.tab).classList.add("on");
+    document.getElementById("tbTitle").textContent = tabNames[btn.dataset.tab]||"";
+    closeSB();
+  });
+});
+
+/* ════════════════════════════════════
+   SIDEBAR MOBILE
+════════════════════════════════════ */
+const sb=document.getElementById("sb");
+document.getElementById("tbBurger").addEventListener("click",()=>sb.classList.add("open"));
+document.getElementById("sbX").addEventListener("click",closeSB);
+function closeSB(){sb.classList.remove("open");}
+
+/* ════════════════════════════════════
+   LOGOUT
+════════════════════════════════════ */
+document.getElementById("logoutBtn").addEventListener("click",()=>{
+  sessionStorage.removeItem("cg_auth");
+  localStorage.removeItem("cg_auth_persist");
+  window.location.replace("login.html");
+});
+
+/* ════════════════════════════════════
+   RESET
+════════════════════════════════════ */
+document.getElementById("resetBtn").addEventListener("click",()=>{
+  if(!confirm("Reset ALL portfolio data to defaults? This cannot be undone.")) return;
+  D = JSON.parse(JSON.stringify(DEFAULT));
+  saveD(D);
+  loadProfile();renderSkills();renderProjects();renderCerts();
+  toast("↺ Reset to defaults!");
+});
+
+/* ════════════════════════════════════
+   SAVE ALL (Ctrl+S)
+════════════════════════════════════ */
+function saveAll(){
+  collectProfile();
+  saveD(D);
+  showSaved();
+  toast("✓ Portfolio saved! Changes are live.");
+}
+document.addEventListener("keydown",e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==="s"){e.preventDefault();saveAll();}
+});
+
+/* ════════════════════════════════════
+   PROFILE
+════════════════════════════════════ */
+function loadProfile(){
+  const p=D.profile;
+  document.getElementById("pName").value     = p.name||"";
+  document.getElementById("pTitle").value    = p.title||"";
+  document.getElementById("pBio").value      = p.bio||"";
+  document.getElementById("pEmail").value    = p.email||"";
+  document.getElementById("pPhone").value    = p.phone||"";
+  document.getElementById("pLinkedin").value = p.linkedin||"";
+  document.getElementById("pBlog").value     = p.blog||"";
+  document.getElementById("pLocation").value = p.location||"";
+  document.getElementById("pAddress").value  = p.address||"";
+}
+function collectProfile(){
+  D.profile={
+    name:     document.getElementById("pName").value,
+    title:    document.getElementById("pTitle").value,
+    bio:      document.getElementById("pBio").value,
+    email:    document.getElementById("pEmail").value,
+    phone:    document.getElementById("pPhone").value,
+    linkedin: document.getElementById("pLinkedin").value,
+    blog:     document.getElementById("pBlog").value,
+    location: document.getElementById("pLocation").value,
+    address:  document.getElementById("pAddress").value,
+  };
+}
+
+/* ════════════════════════════════════
+   CHANGE PASSWORD
+════════════════════════════════════ */
+function changePw(){
+  const u=document.getElementById("newU").value.trim();
+  const p=document.getElementById("newP").value;
+  const p2=document.getElementById("newP2").value;
+  if(!u||!p){toast("⚠ Enter username and password.");return;}
+  if(p!==p2){toast("⚠ Passwords do not match.");return;}
+  if(p.length<6){toast("⚠ Password must be at least 6 characters.");return;}
+  localStorage.setItem("cg_cu",u);
+  localStorage.setItem("cg_cp",p);
+  document.getElementById("newU").value="";
+  document.getElementById("newP").value="";
+  document.getElementById("newP2").value="";
+  toast("✓ Credentials updated! Use them on next login.");
+}
+
+/* ════════════════════════════════════
+   TOGGLE EXPAND
+════════════════════════════════════ */
+function tog(bodyId,chevId){
+  const b=document.getElementById(bodyId);
+  const c=document.getElementById(chevId);
+  if(!b)return;
+  b.classList.toggle("open");
+  if(c)c.classList.toggle("open");
+}
+
+/* ════════════════════════════════════
+   SKILLS
+════════════════════════════════════ */
+function renderSkills(){
+  document.getElementById("skillsList").innerHTML=D.skills.map((s,i)=>`
+    <div class="icard">
+      <div class="icard-head" onclick="tog('skb${i}','skc${i}')">
+        <div class="ic-emoji">${s.icon}</div>
+        <div class="ic-label">${s.name}</div>
+        <div class="ic-meta">${s.level} · ${s.pct}%</div>
+        <span class="ic-chev" id="skc${i}">▼</span>
+        <button class="ic-del" onclick="event.stopPropagation();delSkill(${i})">Delete</button>
+      </div>
+      <div class="icard-body" id="skb${i}">
+        <div class="fgrid">
+          <div class="fg"><label>Icon (Emoji)</label><input type="text" value="${s.icon}" oninput="D.skills[${i}].icon=this.value"/></div>
+          <div class="fg"><label>Skill Name</label><input type="text" value="${s.name}" oninput="D.skills[${i}].name=this.value"/></div>
+          <div class="fg"><label>Level Label</label><input type="text" value="${s.level}" placeholder="e.g. Intermediate" oninput="D.skills[${i}].level=this.value"/></div>
+          <div class="fg">
+            <label>Proficiency — <span id="spv${i}">${s.pct}%</span></label>
+            <div class="rng-row">
+              <input type="range" min="0" max="100" value="${s.pct}" oninput="D.skills[${i}].pct=+this.value;document.getElementById('spv${i}').textContent=this.value+'%'"/>
+              <span class="rng-val" id="srv${i}">${s.pct}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`).join("");
+}
+function delSkill(i){if(!confirm("Delete this skill?"))return;D.skills.splice(i,1);renderSkills();}
+function addSkill(){
+  D.skills.push({icon:"⭐",name:"New Skill",level:"Beginner",pct:50});
+  renderSkills();
+  const all=document.querySelectorAll("#skillsList .icard");
+  const last=all[all.length-1];
+  if(last){last.scrollIntoView({behavior:"smooth"});setTimeout(()=>tog(`skb${D.skills.length-1}`,`skc${D.skills.length-1}`),200);}
+}
+
+/* ════════════════════════════════════
+   PROJECTS
+════════════════════════════════════ */
+function renderProjects(){
+  document.getElementById("projectsList").innerHTML=D.projects.map((p,i)=>`
+    <div class="icard">
+      <div class="icard-head" onclick="tog('pjb${i}','pjc${i}')">
+        <div class="ic-emoji">${p.emoji}</div>
+        <div class="ic-label">${p.title}</div>
+        <div class="ic-meta">${(p.tag||"").substring(0,26)}…</div>
+        <span class="ic-chev" id="pjc${i}">▼</span>
+        <button class="ic-del" onclick="event.stopPropagation();delProject(${i})">Delete</button>
+      </div>
+      <div class="icard-body" id="pjb${i}">
+        <div class="fgrid">
+          <div class="fg"><label>Emoji Icon</label><input type="text" value="${p.emoji}" oninput="D.projects[${i}].emoji=this.value"/></div>
+          <div class="fg"><label>Tag / Category</label><input type="text" value="${p.tag}" oninput="D.projects[${i}].tag=this.value"/></div>
+          <div class="fg full"><label>Project Title</label><input type="text" value="${p.title}" oninput="D.projects[${i}].title=this.value"/></div>
+          <div class="fg full"><label>Description</label><textarea rows="3" oninput="D.projects[${i}].desc=this.value">${p.desc}</textarea></div>
+          <div class="fg"><label>Live / Blog URL</label><input type="url" value="${p.link}" placeholder="https://..." oninput="D.projects[${i}].link=this.value"/></div>
+          <div class="fg"><label>GitHub URL</label><input type="url" value="${p.github}" placeholder="https://github.com/..." oninput="D.projects[${i}].github=this.value"/></div>
+          <div class="fg full"><label>Thumbnail Gradient (CSS)</label><input type="text" value="${p.bg}" placeholder="linear-gradient(...)" oninput="D.projects[${i}].bg=this.value"/></div>
+        </div>
+      </div>
+    </div>`).join("");
+}
+function delProject(i){if(!confirm("Delete this project?"))return;D.projects.splice(i,1);renderProjects();}
+function addProject(){
+  D.projects.push({emoji:"🔧",bg:"linear-gradient(135deg,#0f1a2e,#0a1520)",tag:"Project · "+new Date().getFullYear(),title:"New Project",desc:"Describe your project here.",link:"",github:""});
+  renderProjects();
+  const all=document.querySelectorAll("#projectsList .icard");
+  const last=all[all.length-1];
+  if(last){last.scrollIntoView({behavior:"smooth"});setTimeout(()=>tog(`pjb${D.projects.length-1}`,`pjc${D.projects.length-1}`),200);}
+}
+
+/* ════════════════════════════════════
+   CERTIFICATIONS
+════════════════════════════════════ */
+function renderCerts(){
+  document.getElementById("certsList").innerHTML=D.certs.map((c,i)=>`
+    <div class="icard">
+      <div class="icard-head" onclick="tog('ctb${i}','ctc${i}')">
+        <div class="ic-emoji">${c.icon}</div>
+        <div class="ic-label">${c.name}</div>
+        <div class="ic-meta">${c.year}</div>
+        <span class="ic-chev" id="ctc${i}">▼</span>
+        <button class="ic-del" onclick="event.stopPropagation();delCert(${i})">Delete</button>
+      </div>
+      <div class="icard-body" id="ctb${i}">
+        <div class="fgrid">
+          <div class="fg"><label>Icon (Emoji)</label><input type="text" value="${c.icon}" oninput="D.certs[${i}].icon=this.value"/></div>
+          <div class="fg"><label>Year</label><input type="text" value="${c.year}" oninput="D.certs[${i}].year=this.value"/></div>
+          <div class="fg full"><label>Certificate / Event Name</label><input type="text" value="${c.name}" oninput="D.certs[${i}].name=this.value"/></div>
+          <div class="fg full"><label>Issuing Body / Description</label><input type="text" value="${c.body}" oninput="D.certs[${i}].body=this.value"/></div>
+        </div>
+      </div>
+    </div>`).join("");
+}
+function delCert(i){if(!confirm("Delete this certification?"))return;D.certs.splice(i,1);renderCerts();}
+function addCert(){
+  D.certs.push({icon:"📜",name:"New Certification",body:"Issuing Organization",year:new Date().getFullYear().toString()});
+  renderCerts();
+  const all=document.querySelectorAll("#certsList .icard");
+  const last=all[all.length-1];
+  if(last){last.scrollIntoView({behavior:"smooth"});setTimeout(()=>tog(`ctb${D.certs.length-1}`,`ctc${D.certs.length-1}`),200);}
+}
+
+/* ════════════════════════════════════
+   INIT
+════════════════════════════════════ */
+loadProfile();
+renderSkills();
+renderProjects();
+renderCerts();
+</script>
+</body>
+</html>
